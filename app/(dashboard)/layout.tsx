@@ -119,6 +119,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         isCollapsed={sidebarCollapsed}
         onClick={onClick}
       />
+      <NavItem 
+        href="/routines" 
+        icon={<Dumbbell size={22} />} 
+        label="Rotinas" 
+        isActive={pathname?.startsWith("/routines")} 
+        isCollapsed={sidebarCollapsed}
+        onClick={onClick}
+      />
      
       <NavItem 
         href="/appointments" 
