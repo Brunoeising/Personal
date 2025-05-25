@@ -38,6 +38,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { Avatar, AvatarImage, AvatarFallback } from "@radix-ui/react-avatar";
 
 // Demo data
 const dummyStudents = [

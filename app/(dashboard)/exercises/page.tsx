@@ -37,7 +37,6 @@ import {
 import {
   Plus,
   Search,
-  Filter,
   MoreHorizontal,
   Edit,
   Copy,
@@ -45,36 +44,53 @@ import {
   Eye,
 } from "lucide-react";
 
-// Dummy data for exercises
+// Dados de exemplo para exercícios
 const exercises = [
   {
     id: 1,
-    name: "Bench Press",
-    category: "Strength",
-    equipment: "Barbell",
-    difficulty: "Intermediate",
-    muscleGroup: "Chest",
+    name: "Supino Reto",
+    category: "Força",
+    equipment: "Barra",
+    difficulty: "Intermediário",
+    muscleGroup: "Peito",
     isPublic: true,
   },
   {
     id: 2,
-    name: "Squat",
-    category: "Strength",
-    equipment: "Barbell",
-    difficulty: "Advanced",
-    muscleGroup: "Legs",
+    name: "Agachamento",
+    category: "Força",
+    equipment: "Barra",
+    difficulty: "Avançado",
+    muscleGroup: "Pernas",
     isPublic: true,
   },
   {
     id: 3,
-    name: "Pull-up",
-    category: "Bodyweight",
-    equipment: "Pull-up Bar",
-    difficulty: "Intermediate",
-    muscleGroup: "Back",
+    name: "Barra Fixa",
+    category: "Peso Corporal",
+    equipment: "Barra de Apoio",
+    difficulty: "Intermediário",
+    muscleGroup: "Costas",
     isPublic: true,
   },
-  // Add more exercises...
+  {
+    id: 4,
+    name: "Flexão de Braço",
+    category: "Peso Corporal",
+    equipment: "Nenhum",
+    difficulty: "Iniciante",
+    muscleGroup: "Peito",
+    isPublic: false,
+  },
+  {
+    id: 5,
+    name: "Rosca Direta",
+    category: "Força",
+    equipment: "Halter",
+    difficulty: "Iniciante",
+    muscleGroup: "Braços",
+    isPublic: true,
+  },
 ];
 
 export default function ExercisesPage() {
@@ -83,7 +99,7 @@ export default function ExercisesPage() {
   const [selectedEquipment, setSelectedEquipment] = useState("all");
   const [selectedDifficulty, setSelectedDifficulty] = useState("all");
 
-  // Filter exercises based on search and filters
+  // Filtrar exercícios baseado na busca e filtros
   const filteredExercises = exercises.filter((exercise) => {
     const matchesSearch = exercise.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === "all" || exercise.category === selectedCategory;
@@ -94,147 +110,227 @@ export default function ExercisesPage() {
   });
 
   return (
-    <div className="p-6">
-      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Exercise Library</h1>
-          <p className="text-muted-foreground">
-            Manage and organize your exercise collection
+    <div className="p-4 sm:p-6 space-y-6">
+      {/* Header responsivo */}
+      <header className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+        <div className="space-y-1">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Biblioteca de Exercícios</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
+            Gerencie e organize sua coleção de exercícios
           </p>
         </div>
-        <Button asChild>
+        <Button asChild className="w-full sm:w-auto">
           <Link href="/exercises/create">
             <Plus className="mr-2 h-4 w-4" />
-            Add Exercise
+            Adicionar Exercício
           </Link>
         </Button>
       </header>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Exercises</CardTitle>
-          <CardDescription>
-            Browse and manage your exercise library
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg sm:text-xl">Exercícios</CardTitle>
+          <CardDescription className="text-sm">
+            Navegue e gerencie sua biblioteca de exercícios
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  placeholder="Search exercises..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
+        <CardContent className="space-y-4">
+          {/* Filtros responsivos */}
+          <div className="space-y-4">
+            {/* Barra de pesquisa */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                placeholder="Buscar exercícios..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
             </div>
-            <div className="flex flex-wrap gap-2">
+            
+            {/* Filtros em grid responsivo */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="Category" />
+                <SelectTrigger>
+                  <SelectValue placeholder="Categoria" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  <SelectItem value="Strength">Strength</SelectItem>
-                  <SelectItem value="Bodyweight">Bodyweight</SelectItem>
+                  <SelectItem value="all">Todas as Categorias</SelectItem>
+                  <SelectItem value="Força">Força</SelectItem>
+                  <SelectItem value="Peso Corporal">Peso Corporal</SelectItem>
                   <SelectItem value="Cardio">Cardio</SelectItem>
                 </SelectContent>
               </Select>
 
               <Select value={selectedEquipment} onValueChange={setSelectedEquipment}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="Equipment" />
+                <SelectTrigger>
+                  <SelectValue placeholder="Equipamento" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Equipment</SelectItem>
-                  <SelectItem value="Barbell">Barbell</SelectItem>
-                  <SelectItem value="Dumbbell">Dumbbell</SelectItem>
-                  <SelectItem value="Machine">Machine</SelectItem>
-                  <SelectItem value="None">No Equipment</SelectItem>
+                  <SelectItem value="all">Todos os Equipamentos</SelectItem>
+                  <SelectItem value="Barra">Barra</SelectItem>
+                  <SelectItem value="Halter">Halter</SelectItem>
+                  <SelectItem value="Máquina">Máquina</SelectItem>
+                  <SelectItem value="Nenhum">Nenhum Equipamento</SelectItem>
                 </SelectContent>
               </Select>
 
               <Select value={selectedDifficulty} onValueChange={setSelectedDifficulty}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="Difficulty" />
+                <SelectTrigger className="sm:col-span-2 lg:col-span-1">
+                  <SelectValue placeholder="Dificuldade" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Levels</SelectItem>
-                  <SelectItem value="Beginner">Beginner</SelectItem>
-                  <SelectItem value="Intermediate">Intermediate</SelectItem>
-                  <SelectItem value="Advanced">Advanced</SelectItem>
+                  <SelectItem value="all">Todos os Níveis</SelectItem>
+                  <SelectItem value="Iniciante">Iniciante</SelectItem>
+                  <SelectItem value="Intermediário">Intermediário</SelectItem>
+                  <SelectItem value="Avançado">Avançado</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
-          <div className="border rounded-lg">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Equipment</TableHead>
-                  <TableHead>Difficulty</TableHead>
-                  <TableHead>Muscle Group</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredExercises.map((exercise) => (
-                  <TableRow key={exercise.id}>
-                    <TableCell className="font-medium">{exercise.name}</TableCell>
-                    <TableCell>{exercise.category}</TableCell>
-                    <TableCell>{exercise.equipment}</TableCell>
-                    <TableCell>{exercise.difficulty}</TableCell>
-                    <TableCell>{exercise.muscleGroup}</TableCell>
-                    <TableCell>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        exercise.isPublic 
-                          ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                          : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
-                      }`}>
-                        {exercise.isPublic ? "Public" : "Private"}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Open menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem>
-                            <Eye className="mr-2 h-4 w-4" />
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit Exercise
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Copy className="mr-2 h-4 w-4" />
-                            Duplicate
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-destructive">
-                            <Trash className="mr-2 h-4 w-4" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+          {/* Tabela responsiva */}
+          <div className="border rounded-lg overflow-hidden">
+            {/* Desktop/Tablet View */}
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Categoria</TableHead>
+                    <TableHead>Equipamento</TableHead>
+                    <TableHead>Dificuldade</TableHead>
+                    <TableHead>Grupo Muscular</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredExercises.map((exercise) => (
+                    <TableRow key={exercise.id}>
+                      <TableCell className="font-medium">{exercise.name}</TableCell>
+                      <TableCell>{exercise.category}</TableCell>
+                      <TableCell>{exercise.equipment}</TableCell>
+                      <TableCell>{exercise.difficulty}</TableCell>
+                      <TableCell>{exercise.muscleGroup}</TableCell>
+                      <TableCell>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          exercise.isPublic 
+                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                            : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
+                        }`}>
+                          {exercise.isPublic ? "Público" : "Privado"}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Abrir menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                            <DropdownMenuItem>
+                              <Eye className="mr-2 h-4 w-4" />
+                              Ver Detalhes
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Editar Exercício
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Copy className="mr-2 h-4 w-4" />
+                              Duplicar
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-destructive">
+                              <Trash className="mr-2 h-4 w-4" />
+                              Excluir
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Mobile View - Cards */}
+            <div className="md:hidden space-y-3 p-4">
+              {filteredExercises.map((exercise) => (
+                <Card key={exercise.id} className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-2 flex-1">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-medium text-sm">{exercise.name}</h3>
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                          exercise.isPublic 
+                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                            : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
+                        }`}>
+                          {exercise.isPublic ? "Público" : "Privado"}
+                        </span>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                        <div>
+                          <span className="font-medium">Categoria:</span> {exercise.category}
+                        </div>
+                        <div>
+                          <span className="font-medium">Equipamento:</span> {exercise.equipment}
+                        </div>
+                        <div>
+                          <span className="font-medium">Dificuldade:</span> {exercise.difficulty}
+                        </div>
+                        <div>
+                          <span className="font-medium">Músculo:</span> {exercise.muscleGroup}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Abrir menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                        <DropdownMenuItem>
+                          <Eye className="mr-2 h-4 w-4" />
+                          Ver Detalhes
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Copy className="mr-2 h-4 w-4" />
+                          Duplicar
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="text-destructive">
+                          <Trash className="mr-2 h-4 w-4" />
+                          Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </Card>
+              ))}
+            </div>
           </div>
+
+          {/* Mensagem quando não há exercícios */}
+          {filteredExercises.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>Nenhum exercício encontrado com os filtros aplicados.</p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
