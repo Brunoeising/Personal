@@ -30,15 +30,15 @@ interface NavItemProps {
 const NavItem = ({ href, icon, label, isActive, isCollapsed, onClick }: NavItemProps) => (
   <Link
     href={href}
-    className={`flex items-center p-3 rounded-md transition-colors ${
+    className={`flex items-center p-3 rounded-lg transition-colors ${
       isActive 
         ? "bg-primary/10 text-primary" 
-        : "hover:bg-muted"
+        : "hover:bg-muted/70"
     }`}
     onClick={onClick}
   >
     <div className="mr-3">{icon}</div>
-    {!isCollapsed && <span>{label}</span>}
+    {!isCollapsed && <span className="font-medium">{label}</span>}
   </Link>
 );
 
@@ -55,11 +55,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (!loading && !user) {
       router.push("/login");
     } else if (user) {
-      setUserName(user.user_metadata.full_name || user.email?.split("@")[0] || "User");
+      setUserName(user.user_metadata.full_name || user.email?.split("@")[0] || "Usuário");
     }
   }, [user, loading, router]);
 
-  // Close mobile menu on route change
+  // Fechar menu mobile ao mudar de rota
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
@@ -98,31 +98,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <NavItem 
         href="/students" 
         icon={<Users size={22} />} 
-        label="Students" 
+        label="Alunos" 
         isActive={pathname?.startsWith("/students")} 
+        isCollapsed={sidebarCollapsed}
+        onClick={onClick}
+      />
+       <NavItem 
+        href="/exercises" 
+        icon={<Dumbbell size={22} />} 
+        label="Exercícios" 
+        isActive={pathname?.startsWith("/exercises")} 
         isCollapsed={sidebarCollapsed}
         onClick={onClick}
       />
       <NavItem 
         href="/workouts" 
         icon={<Dumbbell size={22} />} 
-        label="Workouts" 
+        label="Treinos" 
         isActive={pathname?.startsWith("/workouts")} 
         isCollapsed={sidebarCollapsed}
         onClick={onClick}
       />
-      <NavItem 
-        href="/exercises" 
-        icon={<Dumbbell size={22} />} 
-        label="Exercises" 
-        isActive={pathname?.startsWith("/exercises")} 
-        isCollapsed={sidebarCollapsed}
-        onClick={onClick}
-      />
+     
       <NavItem 
         href="/appointments" 
         icon={<Calendar size={22} />} 
-        label="Appointments" 
+        label="Consultas" 
         isActive={pathname?.startsWith("/appointments")} 
         isCollapsed={sidebarCollapsed}
         onClick={onClick}
@@ -130,7 +131,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <NavItem 
         href="/messages" 
         icon={<MessageSquare size={22} />} 
-        label="Messages" 
+        label="Mensagens" 
         isActive={pathname?.startsWith("/messages")} 
         isCollapsed={sidebarCollapsed}
         onClick={onClick}
@@ -138,7 +139,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <NavItem 
         href="/analytics" 
         icon={<BarChart2 size={22} />} 
-        label="Analytics" 
+        label="Relatórios" 
         isActive={pathname?.startsWith("/analytics")} 
         isCollapsed={sidebarCollapsed}
         onClick={onClick}
@@ -146,7 +147,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <NavItem 
         href="/settings" 
         icon={<Settings size={22} />} 
-        label="Settings" 
+        label="Configurações" 
         isActive={pathname?.startsWith("/settings")} 
         isCollapsed={sidebarCollapsed}
         onClick={onClick}
@@ -156,7 +157,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Mobile header */}
+      {/* Cabeçalho Mobile */}
       <header className="bg-background border-b border-border sticky top-0 z-50 lg:hidden">
         <div className="container mx-auto py-3 px-4 flex items-center justify-between">
           <div className="flex items-center">
@@ -185,10 +186,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link href="/settings/profile">Profile</Link>
+                <Link href="/settings/profile">Perfil</Link>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={toggleTheme}>
                 {theme === "dark" ? (
@@ -196,19 +197,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 ) : (
                   <Moon size={16} className="mr-2" />
                 )}
-                Switch Theme
+                Alternar Tema
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
                 <LogOut size={16} className="mr-2" />
-                Sign out
+                Sair
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </header>
 
-      {/* Mobile sidebar (overlay) */}
+      {/* Sidebar Mobile (overlay) */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-40 lg:hidden">
           <div 
@@ -254,7 +255,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 onClick={handleSignOut}
               >
                 <LogOut size={16} className="mr-2" />
-                Sign out
+                Sair
               </Button>
             </div>
           </div>
@@ -262,7 +263,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       )}
 
       <div className="flex flex-1">
-        {/* Desktop sidebar */}
+        {/* Sidebar Desktop */}
         <aside 
           className={`hidden lg:block border-r border-border bg-card h-screen sticky top-0 transition-all duration-300 ${
             sidebarCollapsed ? "w-[4.5rem]" : "w-64"
@@ -296,14 +297,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {!sidebarCollapsed ? (
               <div className="flex items-center mb-4">
                 <Avatar className="h-10 w-10 mr-3">
-                  <AvatarImage src="\" alt={userName} />
+                  <AvatarImage src="" alt={userName} />
                   <AvatarFallback className="bg-primary/10 text-primary">
                     {userName.substring(0, 2)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="overflow-hidden">
                   <p className="font-medium truncate">{userName}</p>
-                  <p className="text-sm text-muted-foreground">Trainer</p>
+                  <p className="text-sm text-muted-foreground">Personal Trainer</p>
                 </div>
               </div>
             ) : (
@@ -337,7 +338,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </aside>
 
-        {/* Main content */}
+        {/* Conteúdo Principal */}
         <main className="flex-1 min-h-screen">
           {children}
         </main>

@@ -237,14 +237,7 @@ export default function DashboardPage() {
                 Aqui está um resumo do que está acontecendo com seus alunos hoje.
               </p>
             </div>
-            <div className="flex gap-2">
-              <Button asChild className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-                <Link href="/students/create">
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Novo Aluno
-                </Link>
-              </Button>
-            </div>
+      
           </div>
         </header>
 
