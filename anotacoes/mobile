@@ -1,0 +1,36 @@
+Existem várias abordagens para converter seu app Next.js 14 para mobile, cada uma com seus trade-offs em termos de performance, desenvolvimento e manutenção:
+
+## Opções Principais
+
+**1. PWA (Progressive Web App)**
+- Mais rápida de implementar
+- Adiciona apenas `next-pwa` e configura service workers
+- Funciona como app nativo (ícone na home, offline, notificações)
+- Limitações: menos acesso às APIs nativas do dispositivo
+
+**2. Capacitor**
+- Mantém sua base Next.js praticamente intacta
+- Empacota como app nativo real
+- Acesso completo às APIs nativas via plugins
+- Build: `npm run build` → `npx cap add ios/android` → deploy
+
+**3. React Native com código compartilhado**
+- Maior reescrita, mas performance nativa superior
+- Compartilha lógica de negócio e estado
+- Usa React Native Web para manter versão web
+- Mais complexo, mas resultado mais performático
+
+**4. Expo (com React Native)**
+- Desenvolvimento mais ágil que RN puro  
+- Boa DX com hot reload e build cloud
+- Limitações em algumas funcionalidades nativas específicas
+
+## Recomendação para seu perfil
+
+Considerando seu foco em **eficiência e redução de complexidade**:
+
+1. **Comece com PWA** - implementação em 1-2 dias, resultado imediato
+2. **Se precisar de mais funcionalidades nativas**, migre para **Capacitor** - mantém seu código Next.js
+3. **React Native apenas se** performance nativa for crítica
+
+Qual dessas abordagens faz mais sentido para seu caso específico? Posso detalhar a implementação da que escolher.
