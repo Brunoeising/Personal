@@ -1,4 +1,3 @@
-// app/(dashboard)/students/create/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -15,6 +14,7 @@ import {
   FormDescription,
   FormMessage,
   FormField,
+  useFormField,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -88,7 +88,7 @@ export default function CreateStudentPage() {
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [uploadedAvatarFile, setUploadedAvatarFile] = useState<File | null>(null);
 
-  const form = useForm<StudentFormData>({
+  const form = useForm({
     resolver: zodResolver(studentSchema),
     defaultValues: {
       name: "",
