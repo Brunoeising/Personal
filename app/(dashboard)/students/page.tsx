@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -53,139 +53,109 @@ import {
   Phone,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useSupabase } from "@/lib/providers/supabase-provider";
+import { useToast } from "@/hooks/use-toast";
 
 // Tipos TypeScript
 interface Student {
-  id: number;
+  id: string;
   name: string;
   email: string;
   phone?: string;
   status: 'active' | 'inactive' | 'onboarding' | 'paused';
   goal: string;
   progress: number;
-  startDate: string;
-  lastSession: string | null;
-  nextSession: string | null;
-  avatar?: string;
-  totalSessions?: number;
-  monthlyGoal?: number;
+  birth_date?: string;
+  last_session?: string;
+  next_session?: string;
+  avatar_url?: string;
+  total_sessions?: number;
+  monthly_goal?: number;
+  created_at: string;
+  updated_at: string;
 }
 
-// Dados de exemplo
-const dummyStudents: Student[] = [
-  {
-    id: 1,
-    name: "João Silva",
-    email: "joao@example.com",
-    phone: "(11) 99999-9999",
-    status: "active",
-    goal: "Ganho de massa muscular",
-    progress: 78,
-    startDate: "2023-01-15",
-    lastSession: "2023-09-18",
-    nextSession: "2023-09-25",
-    totalSessions: 45,
-    monthlyGoal: 16,
-  },
-  {
-    id: 2,
-    name: "Maria Oliveira",
-    email: "maria@example.com",
-    phone: "(11) 88888-8888",
-    status: "active",
-    goal: "Perda de peso",
-    progress: 65,
-    startDate: "2023-02-20",
-    lastSession: "2023-09-20",
-    nextSession: "2023-09-27",
-    totalSessions: 32,
-    monthlyGoal: 12,
-  },
-  {
-    id: 3,
-    name: "Carlos Santos",
-    email: "carlos@example.com",
-    phone: "(11) 77777-7777",
-    status: "inactive",
-    goal: "Reabilitação",
-    progress: 32,
-    startDate: "2023-03-10",
-    lastSession: "2023-08-15",
-    nextSession: null,
-    totalSessions: 18,
-    monthlyGoal: 8,
-  },
-  {
-    id: 4,
-    name: "Ana Pereira",
-    email: "ana@example.com",
-    phone: "(11) 66666-6666",
-    status: "active",
-    goal: "Condicionamento físico",
-    progress: 45,
-    startDate: "2023-04-05",
-    lastSession: "2023-09-19",
-    nextSession: "2023-09-26",
-    totalSessions: 28,
-    monthlyGoal: 12,
-  },
-  {
-    id: 5,
-    name: "Roberto Alves",
-    email: "roberto@example.com",
-    phone: "(11) 55555-5555",
-    status: "onboarding",
-    goal: "Treinamento de força",
-    progress: 15,
-    startDate: "2023-09-01",
-    lastSession: null,
-    nextSession: "2023-09-22",
-    totalSessions: 3,
-    monthlyGoal: 16,
-  },
-  {
-    id: 6,
-    name: "Fernanda Costa",
-    email: "fernanda@example.com",
-    phone: "(11) 44444-4444",
-    status: "paused",
-    goal: "Fortalecimento core",
-    progress: 55,
-    startDate: "2023-05-10",
-    lastSession: "2023-08-30",
-    nextSession: null,
-    totalSessions: 24,
-    monthlyGoal: 10,
-  },
-];
-
 export default function StudentsPage() {
+  const { supabase, user } = useSupabase();
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
+  const [students, setStudents] = useState<Student[]>([]);
+  const [loading, setLoading] = useState(true);
   
+  // Buscar alunos do Supabase
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        if (!user) return;
+
+        const { data, error } = await supabase
+          .from('students')
+          .select(`
+            *,
+            workout_sessions (
+              count,
+              completed_at
+            )
+          `)
+          .eq('trainer_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        // Processar os dados para o formato necessário
+        const processedStudents = data.map(student => ({
+          ...student,
+          total_sessions: student.workout_sessions?.[0]?.count || 0,
+          last_session: student.workout_sessions?.[0]?.completed_at,
+        }));
+
+        setStudents(processedStudents);
+      } catch (error: any) {
+        toast({
+          title: "Erro ao carregar alunos",
+          description: error.message,
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStudents();
+  }, [supabase, user, toast]);
+
   // Estatísticas calculadas
   const stats = useMemo(() => {
-    const active = dummyStudents.filter(s => s.status === 'active').length;
-    const inactive = dummyStudents.filter(s => s.status === 'inactive').length;
-    const onboarding = dummyStudents.filter(s => s.status === 'onboarding').length;
-    const paused = dummyStudents.filter(s => s.status === 'paused').length;
-    const total = dummyStudents.length;
+    const active = students.filter(s => s.status === 'active').length;
+    const inactive = students.filter(s => s.status === 'inactive').length;
+    const onboarding = students.filter(s => s.status === 'onboarding').length;
+    const paused = students.filter(s => s.status === 'paused').length;
+    const total = students.length;
     
     return { active, inactive, onboarding, paused, total };
-  }, []);
+  }, [students]);
 
   // Filtrar alunos baseado na busca e aba ativa
   const filteredStudents = useMemo(() => {
-    return dummyStudents.filter((student) => {
+    return students.filter((student) => {
       const matchesSearch = 
         student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         student.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        student.goal.toLowerCase().includes(searchQuery.toLowerCase());
+        student.goal?.toLowerCase().includes(searchQuery.toLowerCase());
                          
       if (activeTab === "all") return matchesSearch;
       return matchesSearch && student.status === activeTab;
     });
-  }, [searchQuery, activeTab]);
+  }, [searchQuery, activeTab, students]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
@@ -363,7 +333,7 @@ function StudentTable({ students }: { students: Student[] }) {
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-10 w-10">
-                        <AvatarImage src={student.avatar} alt={student.name} />
+                        <AvatarImage src={student.avatar_url} alt={student.name} />
                         <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                           {student.name.substring(0, 2).toUpperCase()}
                         </AvatarFallback>
@@ -395,10 +365,10 @@ function StudentTable({ students }: { students: Student[] }) {
                   </TableCell>
                   <TableCell>
                     <div className="text-sm">
-                      {student.nextSession ? (
+                      {student.next_session ? (
                         <div className="flex items-center gap-1">
                           <Calendar className="h-3 w-3 text-muted-foreground" />
-                          {formatDate(student.nextSession)}
+                          {formatDate(student.next_session)}
                         </div>
                       ) : (
                         <span className="text-muted-foreground">Não agendada</span>
@@ -407,7 +377,7 @@ function StudentTable({ students }: { students: Student[] }) {
                   </TableCell>
                   <TableCell>
                     <div className="text-center">
-                      <span className="font-semibold">{student.totalSessions || 0}</span>
+                      <span className="font-semibold">{student.total_sessions || 0}</span>
                       <p className="text-xs text-muted-foreground">sessões</p>
                     </div>
                   </TableCell>
@@ -447,7 +417,7 @@ function StudentTable({ students }: { students: Student[] }) {
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3 flex-1">
                     <Avatar className="h-12 w-12">
-                      <AvatarImage src={student.avatar} alt={student.name} />
+                      <AvatarImage src={student.avatar_url} alt={student.name} />
                       <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                         {student.name.substring(0, 2).toUpperCase()}
                       </AvatarFallback>
@@ -471,7 +441,7 @@ function StudentTable({ students }: { students: Student[] }) {
                   </div>
                   <div>
                     <p className="text-muted-foreground">Sessões</p>
-                    <p className="font-medium">{student.totalSessions || 0} realizadas</p>
+                    <p className="font-medium">{student.total_sessions || 0} realizadas</p>
                   </div>
                 </div>
 
@@ -493,7 +463,7 @@ function StudentTable({ students }: { students: Student[] }) {
                 <div className="flex items-center justify-between pt-2 border-t">
                   <span className="text-sm text-muted-foreground">Próxima sessão:</span>
                   <span className="text-sm font-medium">
-                    {student.nextSession ? formatDate(student.nextSession) : 'Não agendada'}
+                    {student.next_session ? formatDate(student.next_session) : 'Não agendada'}
                   </span>
                 </div>
               </div>
