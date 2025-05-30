@@ -20,7 +20,17 @@ export async function POST(request: NextRequest) {
 
     // Get request body
     const body = await request.json();
-    const { name, email, phone, birthDate, gender, goal, notes, isActive } = body;
+    const { 
+      full_name, 
+      email, 
+      phone, 
+      birth_date, 
+      age,
+      gender, 
+      goal, 
+      notes, 
+      is_active 
+    } = body;
 
     // Create user account
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
@@ -28,7 +38,7 @@ export async function POST(request: NextRequest) {
       password: Math.random().toString(36).slice(-12),
       email_confirm: true,
       user_metadata: {
-        full_name: name,
+        full_name,
         role: 'student'
       }
     });
@@ -44,14 +54,15 @@ export async function POST(request: NextRequest) {
       .insert({
         id: authData.user.id,
         trainer_id: trainerId,
-        full_name: name,
+        full_name,
         email,
         phone,
+        birth_date,
+        age,
         gender,
-        birth_date: birthDate,
         goal: goal || "Objetivo não especificado",
         notes,
-        is_active: isActive ?? true,
+        is_active: is_active ?? true,
         status: 'onboarding'
       })
       .select()
@@ -61,7 +72,9 @@ export async function POST(request: NextRequest) {
       console.error('Student creation error:', studentError);
       // Rollback auth user if student creation fails
       await supabase.auth.admin.deleteUser(authData.user.id);
-      return NextResponse.json({ error: studentError.message }, { status: 500 });
+      return NextResponse.json({ 
+        error: `Erro ao criar perfil do aluno: ${studentError.message}` 
+      }, { status: 500 });
     }
 
     // Send password reset email
@@ -75,15 +88,22 @@ export async function POST(request: NextRequest) {
 
     if (resetError) {
       console.error('Reset email error:', resetError);
+      return NextResponse.json({ 
+        message: 'Aluno criado com sucesso, mas houve um erro ao enviar o email de acesso',
+        error: resetError.message,
+        student: studentData
+      }, { status: 201 });
     }
 
     return NextResponse.json({ 
-      message: 'Student invited successfully',
+      message: 'Aluno criado com sucesso e email de acesso enviado',
       student: studentData
-    });
+    }, { status: 201 });
 
   } catch (error: any) {
     console.error('Unexpected error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ 
+      error: `Erro inesperado: ${error.message}` 
+    }, { status: 500 });
   }
 }

@@ -58,7 +58,7 @@ import { useToast } from "@/hooks/use-toast";
 
 interface Student {
   id: string;
-  name: string;
+  full_name: string;
   email: string;
   phone?: string;
   status: 'active' | 'inactive' | 'onboarding' | 'paused';
@@ -73,11 +73,10 @@ interface Student {
   created_at: string;
   updated_at: string;
   workout_sessions?: {
-    count: number;
-    last_session?: string;
+    completed_at: string;
   }[];
   appointments?: {
-    next_session?: string;
+    start_time: string;
   }[];
 }
 
@@ -98,13 +97,8 @@ export default function StudentsPage() {
           .from('students')
           .select(`
             *,
-            workout_sessions (
-              count,
-              last_session:completed_at(max)
-            ),
-            appointments!inner (
-              next_session:start_time(min)
-            )
+            workout_sessions (completed_at),
+            appointments (start_time)
           `)
           .eq('trainer_id', user.id)
           .order('created_at', { ascending: false });
@@ -112,18 +106,38 @@ export default function StudentsPage() {
         if (error) throw error;
 
         // Process the data
-        const processedStudents = data.map(student => ({
-          ...student,
-          total_sessions: student.workout_sessions?.[0]?.count || 0,
-          last_session: student.workout_sessions?.[0]?.last_session,
-          next_session: student.appointments?.[0]?.next_session,
-          progress: Math.floor(Math.random() * 100) // Temporary - implement real logic
-        }));
+        const processedStudents = data?.map(student => {
+          // Find last completed session
+          const lastSession = student.workout_sessions?.reduce((latest, session) => {
+            if (!latest || new Date(session.completed_at) > new Date(latest)) {
+              return session.completed_at;
+            }
+            return latest;
+          }, null);
+
+          // Find next appointment
+          const nextSession = student.appointments?.reduce((nearest, appt) => {
+            const apptDate = new Date(appt.start_time);
+            if (apptDate > new Date() && (!nearest || apptDate < new Date(nearest))) {
+              return appt.start_time;
+            }
+            return nearest;
+          }, null);
+
+          return {
+            ...student,
+            total_sessions: student.workout_sessions?.length || 0,
+            last_session: lastSession,
+            next_session: nextSession,
+            progress: Math.floor(Math.random() * 100) // Temporary progress calculation
+          };
+        }) || [];
 
         setStudents(processedStudents);
       } catch (error: any) {
+        console.error('Error fetching students:', error);
         toast({
-          title: "Erro ao carregar alunos",
+          title: "Error loading students",
           description: error.message,
           variant: "destructive",
         });
@@ -132,7 +146,9 @@ export default function StudentsPage() {
       }
     };
 
-    fetchStudents();
+    if (user) {
+      fetchStudents();
+    }
   }, [user, supabase, toast]);
 
   // Stats calculation
@@ -150,7 +166,7 @@ export default function StudentsPage() {
   const filteredStudents = useMemo(() => {
     return students.filter((student) => {
       const matchesSearch = 
-        student.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        student.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         student.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         student.goal?.toLowerCase().includes(searchQuery.toLowerCase());
                          
@@ -282,7 +298,7 @@ export default function StudentsPage() {
             <Tabs defaultValue="all" onValueChange={setActiveTab}>
               <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5">
                 <TabsTrigger value="all" className="text-xs sm:text-sm">
-                  Todos ({stats.total})
+                  Todas ({stats.total})
                 </TabsTrigger>
                 <TabsTrigger value="active" className="text-xs sm:text-sm">
                   Ativos ({stats.active})
@@ -329,13 +345,13 @@ export default function StudentsPage() {
                             <TableCell>
                               <div className="flex items-center gap-3">
                                 <Avatar className="h-10 w-10">
-                                  <AvatarImage src={student.avatar_url} alt={student.name} />
+                                  <AvatarImage src={student.avatar_url} alt={student.full_name} />
                                   <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                                    {student.name?.substring(0, 2).toUpperCase()}
+                                    {student.full_name?.substring(0, 2).toUpperCase()}
                                   </AvatarFallback>
                                 </Avatar>
                                 <div>
-                                  <p className="font-medium">{student.name}</p>
+                                  <p className="font-medium">{student.full_name}</p>
                                   <p className="text-xs text-muted-foreground">{student.email}</p>
                                 </div>
                               </div>

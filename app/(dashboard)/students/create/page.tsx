@@ -30,20 +30,21 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft } from "lucide-react";
 
 const studentSchema = z.object({
-  name: z.string().min(2, {
+  full_name: z.string().min(2, {
     message: "O nome deve ter pelo menos 2 caracteres",
   }),
   email: z.string().email({
     message: "Email inválido",
   }),
   phone: z.string().optional(),
-  birthDate: z.string().optional(),
+  birth_date: z.string().optional(),
+  age: z.number().min(0).max(120).optional(),
   gender: z.enum(["male", "female", "other"]).optional(),
   goal: z.string().min(5, {
     message: "Objetivo deve ter pelo menos 5 caracteres",
   }).optional().or(z.literal("")),
   notes: z.string().optional(),
-  isActive: z.boolean().default(true),
+  is_active: z.boolean().default(true),
 });
 
 type FormData = z.infer<typeof studentSchema>;
@@ -57,14 +58,15 @@ export default function CreateStudentPage() {
   const form = useForm<FormData>({
     resolver: zodResolver(studentSchema),
     defaultValues: {
-      name: "",
+      full_name: "",
       email: "",
       phone: "",
-      birthDate: "",
+      birth_date: "",
+      age: undefined,
       gender: "male",
       goal: "",
       notes: "",
-      isActive: true,
+      is_active: true,
     },
   });
 
@@ -143,7 +145,7 @@ export default function CreateStudentPage() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
-              name="name"
+              name="full_name"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Nome Completo</FormLabel>
@@ -183,19 +185,41 @@ export default function CreateStudentPage() {
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="birthDate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Data de Nascimento</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="birth_date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Data de Nascimento</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="age"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Idade</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="0" 
+                        max="120" 
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}
@@ -259,7 +283,7 @@ export default function CreateStudentPage() {
 
             <FormField
               control={form.control}
-              name="isActive"
+              name="is_active"
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                   <div className="space-y-0.5">
