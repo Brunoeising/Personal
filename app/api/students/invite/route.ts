@@ -54,13 +54,14 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    if (authError) {
-      console.error('Auth error:', authError);
-    }
-    console.log('Auth user creation response:', { 
-      userId: authData?.user?.id,
-      error: authError?.message 
-    });
+   if (authError) {
+  console.error('Auth user creation FAILED:', authError); // Log the full error object
+  return NextResponse.json(
+    { error: authError.message || 'Failed to create user account', details: authError }, // Include full error in response
+    { status: 500 }
+  );
+}
+console.log('Auth user created successfully. User ID:', authData.user.id);
 
     if (authError || !authData?.user?.id) {
       console.error('Failed to create auth user:', authError);
@@ -115,7 +116,7 @@ export async function POST(request: NextRequest) {
       console.log('Rolling back auth user creation...');
       await supabase.auth.admin.deleteUser(userId);
       return NextResponse.json(
-        { error: studentError.message || 'Erro ao criar perfil do aluno', details: studentError },
+    { error: studentError.message || 'Erro ao criar perfil do aluno', details: studentError }, // Include full error in response
         { status: 500 }
       );
     }
