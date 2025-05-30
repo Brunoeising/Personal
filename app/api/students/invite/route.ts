@@ -5,12 +5,6 @@ import { NextRequest, NextResponse } from 'next/server';
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  }
 );
 
 export async function POST(request: NextRequest) {
@@ -35,6 +29,15 @@ export async function POST(request: NextRequest) {
 
     const { name, email, phone, birthDate, gender, goal = "Objetivo não especificado", notes, isActive } = body;
 
+    // Checagem de campos obrigatórios
+    if (!name || !email) {
+      console.error('Missing required fields: name or email');
+      return NextResponse.json(
+        { error: 'Nome e email são obrigatórios' },
+        { status: 400 }
+      );
+    }
+
     // Generate a random password
     const tempPassword = Math.random().toString(36).slice(-12);
     console.log('Generated temporary password');
@@ -51,6 +54,9 @@ export async function POST(request: NextRequest) {
       }
     });
 
+    if (authError) {
+      console.error('Auth error:', authError);
+    }
     console.log('Auth user creation response:', { 
       userId: authData?.user?.id,
       error: authError?.message 
@@ -58,7 +64,10 @@ export async function POST(request: NextRequest) {
 
     if (authError || !authData?.user?.id) {
       console.error('Failed to create auth user:', authError);
-      throw new Error(authError?.message || 'Failed to create user account');
+      return NextResponse.json(
+        { error: authError?.message || 'Failed to create user account' },
+        { status: 500 }
+      );
     }
 
     // Verify we have a valid user ID
@@ -67,7 +76,10 @@ export async function POST(request: NextRequest) {
 
     if (!userId) {
       console.error('Invalid user ID generated');
-      throw new Error('Invalid user ID generated');
+      return NextResponse.json(
+        { error: 'Invalid user ID generated' },
+        { status: 500 }
+      );
     }
 
     // Create student profile
@@ -97,17 +109,15 @@ export async function POST(request: NextRequest) {
       .select()
       .single();
 
-    console.log('Student profile creation response:', {
-      data: studentData,
-      error: studentError?.message
-    });
-
     if (studentError) {
       console.error('Failed to create student profile:', studentError);
       // Rollback auth user creation if student profile creation fails
       console.log('Rolling back auth user creation...');
       await supabase.auth.admin.deleteUser(userId);
-      throw studentError;
+      return NextResponse.json(
+        { error: studentError.message || 'Erro ao criar perfil do aluno', details: studentError },
+        { status: 500 }
+      );
     }
 
     // Send password reset email
@@ -135,7 +145,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Error in student invitation process:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to invite student' },
+      { error: error.message || 'Failed to invite student', details: error },
       { status: 500 }
     );
   }
