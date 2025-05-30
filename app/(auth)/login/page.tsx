@@ -67,7 +67,6 @@ export default function LoginPage() {
         description: "Redirecting to dashboard...",
       });
 
-      router.push("/dashboard");
     } catch (error: any) {
       toast({
         title: "Login failed",
