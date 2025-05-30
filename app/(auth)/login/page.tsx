@@ -67,6 +67,7 @@ export default function LoginPage() {
         description: "Redirecting to dashboard...",
       });
 
+window.location.href = "/dashboard";
     } catch (error: any) {
       toast({
         title: "Login failed",
