@@ -81,44 +81,46 @@ export default function StudentsPage() {
   const [activeTab, setActiveTab] = useState("all");
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
+  const fetchStudents = async () => {
+    try {
+      if (!isTrainer) throw new Error('Only trainers can access students');
+      if (!user?.id) return;
+      
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('students')
+        .select('*')
+        .eq('trainer_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Process the data
+      const processedStudents = data?.map(student => ({
+        ...student,
+        total_sessions: 0, // This will be implemented later with actual session counting
+        progress: Math.floor(Math.random() * 100) // Temporary progress calculation
+      })) || [];
+
+      setStudents(processedStudents);
+    } catch (error: any) {
+      console.error('Error fetching students:', error);
+      toast({
+        title: "Error loading students",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchStudents = async () => {
-      try {
-        if (!user) return;
-
-        const { data, error } = await supabase
-          .from('students')
-          .select('*')
-          .eq('trainer_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-
-        // Process the data
-        const processedStudents = data?.map(student => ({
-          ...student,
-          total_sessions: 0, // This will be implemented later with actual session counting
-          progress: Math.floor(Math.random() * 100) // Temporary progress calculation
-        })) || [];
-
-        setStudents(processedStudents);
-      } catch (error: any) {
-        console.error('Error fetching students:', error);
-        toast({
-          title: "Error loading students",
-          description: error.message,
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (user && isTrainer) {
       fetchStudents();
     }
-  }, [user, isTrainer, supabase, toast]);
+  }, [user, isTrainer]);
 
   // Stats calculation
   const stats = {
