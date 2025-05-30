@@ -41,7 +41,7 @@ const studentSchema = z.object({
   gender: z.enum(["male", "female", "other"]).optional(),
   goal: z.string().min(5, {
     message: "Objetivo deve ter pelo menos 5 caracteres",
-  }).default(""),
+  }).optional().or(z.literal("")),
   notes: z.string().optional(),
   isActive: z.boolean().default(true),
 });
@@ -89,7 +89,7 @@ export default function CreateStudentPage() {
         },
         body: JSON.stringify({
           ...data,
-          goal: data.goal || "Objetivo não especificado" // Ensure goal is never empty
+          goal: data.goal || "Objetivo não especificado"
         })
       });
 
@@ -203,10 +203,7 @@ export default function CreateStudentPage() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Gênero</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o gênero" />
@@ -232,8 +229,7 @@ export default function CreateStudentPage() {
                   <FormControl>
                     <Textarea 
                       placeholder="Objetivo do aluno (ex: perda de peso, ganho de massa...)" 
-                      value={field.value || ''} 
-                      onChange={field.onChange}
+                      {...field} 
                     />
                   </FormControl>
                   <FormMessage />
