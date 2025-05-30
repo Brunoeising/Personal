@@ -101,10 +101,10 @@ export default function StudentsPage() {
             *,
             workout_sessions (
               count,
-              completed_at
+              completed_at:completed_at(max)
             ),
             appointments (
-              start_time
+              start_time:start_time(min)
             )
           `)
           .eq('trainer_id', user.id)
