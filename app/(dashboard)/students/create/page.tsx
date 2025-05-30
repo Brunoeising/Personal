@@ -41,7 +41,7 @@ const studentSchema = z.object({
   gender: z.enum(["male", "female", "other"]).optional(),
   goal: z.string().min(5, {
     message: "Objetivo deve ter pelo menos 5 caracteres",
-  }),
+  }).default(""),
   notes: z.string().optional(),
   isActive: z.boolean().default(true),
 });
@@ -87,7 +87,10 @@ export default function CreateStudentPage() {
           'Content-Type': 'application/json',
           'x-trainer-id': user.id
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify({
+          ...data,
+          goal: data.goal || "Objetivo não especificado" // Ensure goal is never empty
+        })
       });
 
       const result = await response.json();
@@ -103,7 +106,6 @@ export default function CreateStudentPage() {
 
       router.push("/students");
     } catch (error: any) {
-      console.error("Error creating student:", error);
       toast({
         title: "Erro ao criar aluno",
         description: error.message || "Tente novamente mais tarde",
@@ -201,7 +203,10 @@ export default function CreateStudentPage() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Gênero</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o gênero" />
@@ -227,7 +232,8 @@ export default function CreateStudentPage() {
                   <FormControl>
                     <Textarea 
                       placeholder="Objetivo do aluno (ex: perda de peso, ganho de massa...)" 
-                      {...field} 
+                      value={field.value || ''} 
+                      onChange={field.onChange}
                     />
                   </FormControl>
                   <FormMessage />

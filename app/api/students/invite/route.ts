@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
 
     // Get request body
     const body = await request.json();
-    const { name, email, phone, birthDate, gender, goal, notes, isActive } = body;
+    const { name, email, phone, birthDate, gender, goal = "Objetivo não especificado", notes, isActive } = body;
 
     // Generate a random password
     const tempPassword = Math.random().toString(36).slice(-12);
@@ -54,12 +54,12 @@ export async function POST(request: NextRequest) {
         trainer_id: trainerId,
         full_name: name,
         email,
-        phone,
-        gender,
-        birth_date: birthDate,
-        goal,
-        notes,
-        is_active: isActive,
+        phone: phone || null,
+        gender: gender || null,
+        birth_date: birthDate || null,
+        goal: goal || "Objetivo não especificado", // Ensure goal is never null
+        notes: notes || null,
+        is_active: isActive ?? true,
         status: 'onboarding'
       });
 
