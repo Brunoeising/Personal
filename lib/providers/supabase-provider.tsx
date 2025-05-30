@@ -36,6 +36,48 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   
   const supabase = createClientComponentClient();
 
+  const createProfile = async (userId: string, email: string, role: UserRole) => {
+    try {
+      const { data: newProfile, error: insertError } = await supabase
+        .from('profiles')
+        .insert([
+          {
+            id: userId,
+            email: email,
+            full_name: email.split('@')[0], // Temporary name from email
+            role: role
+          }
+        ])
+        .select(`
+          *,
+          trainers (subscription_tier, subscription_status),
+          students!students_id_fkey (trainer_id)
+        `)
+        .maybeSingle();
+
+      if (insertError) {
+        console.error('Error creating profile:', insertError);
+        return null;
+      }
+
+      if (newProfile) {
+        return {
+          id: newProfile.id,
+          full_name: newProfile.full_name,
+          email: newProfile.email,
+          role: newProfile.role as UserRole,
+          subscription_tier: newProfile.trainers?.subscription_tier,
+          subscription_status: newProfile.trainers?.subscription_status,
+          trainer_id: newProfile.students?.trainer_id
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error('Error in createProfile:', error);
+      return null;
+    }
+  };
+
   const fetchProfile = async (userId: string) => {
     try {
       const { data: profileData, error: profileError } = await supabase
@@ -46,7 +88,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
           students!students_id_fkey (trainer_id)
         `)
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (profileError) {
         console.error('Error fetching profile:', profileError);
@@ -58,7 +100,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
           id: profileData.id,
           full_name: profileData.full_name,
           email: profileData.email,
-          role: profileData.role || 'trainer',
+          role: profileData.role as UserRole,
           subscription_tier: profileData.trainers?.subscription_tier,
           subscription_status: profileData.trainers?.subscription_status,
           trainer_id: profileData.students?.trainer_id
@@ -81,7 +123,14 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
           console.log('User authenticated:', session.user.id);
           setUser(session.user);
           
-          const profileData = await fetchProfile(session.user.id);
+          let profileData = await fetchProfile(session.user.id);
+          
+          // If no profile exists, create one
+          if (!profileData) {
+            const role = session.user.user_metadata.role as UserRole || 'trainer';
+            profileData = await createProfile(session.user.id, session.user.email!, role);
+          }
+          
           if (profileData) {
             console.log('Profile loaded:', profileData.role);
             setProfile(profileData);
@@ -108,7 +157,14 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
           console.log('User authenticated in listener:', session.user.id);
           setUser(session.user);
           
-          const profileData = await fetchProfile(session.user.id);
+          let profileData = await fetchProfile(session.user.id);
+          
+          // If no profile exists, create one
+          if (!profileData) {
+            const role = session.user.user_metadata.role as UserRole || 'trainer';
+            profileData = await createProfile(session.user.id, session.user.email!, role);
+          }
+          
           if (profileData) {
             console.log('Profile updated in listener:', profileData.role);
             setProfile(profileData);
