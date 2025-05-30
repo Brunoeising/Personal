@@ -26,24 +26,37 @@ export function useExercises() {
 
   const fetchExercises = async () => {
     try {
+      console.log('Fetching exercises, user:', user?.id, 'isTrainer:', isTrainer);
       setLoading(true);
+      
+      if (!user) {
+        console.log('No user, skipping fetch');
+        return;
+      }
+
       let query = supabase.from('exercises').select('*');
 
-      // If user is a trainer, get their exercises plus public ones
       if (isTrainer) {
-        query = query.or(`trainer_id.eq.${user?.id},is_public.eq.true`);
+        console.log('Fetching trainer exercises');
+        query = query.or(`trainer_id.eq.${user.id},is_public.eq.true`);
       } else {
-        // If user is a student, only get public exercises
+        console.log('Fetching public exercises only');
         query = query.eq('is_public', true);
       }
 
       const { data, error } = await query.order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching exercises:', error);
+        throw error;
+      }
+
+      console.log('Exercises fetched:', data?.length);
       setExercises(data || []);
     } catch (error: any) {
+      console.error('Exercise fetch error:', error);
       toast({
-        title: "Erro ao carregar exercícios",
+        title: "Error loading exercises",
         description: error.message,
         variant: "destructive",
       });
@@ -131,7 +144,7 @@ export function useExercises() {
     if (user) {
       fetchExercises();
     }
-  }, [user]);
+  }, [user, isTrainer]);
 
   return {
     exercises,

@@ -36,39 +36,63 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   
   const supabase = createClientComponentClient();
 
+  const fetchProfile = async (userId: string) => {
+    try {
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select(`
+          *,
+          trainers (subscription_tier, subscription_status),
+          students!students_id_fkey (trainer_id)
+        `)
+        .eq('id', userId)
+        .single();
+
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
+        return null;
+      }
+
+      if (profileData) {
+        return {
+          id: profileData.id,
+          full_name: profileData.full_name,
+          email: profileData.email,
+          role: profileData.role || 'trainer',
+          subscription_tier: profileData.trainers?.subscription_tier,
+          subscription_status: profileData.trainers?.subscription_status,
+          trainer_id: profileData.students?.trainer_id
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error('Error in fetchProfile:', error);
+      return null;
+    }
+  };
+
   useEffect(() => {
     const getSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
+        console.log('Session state:', session ? 'Active' : 'No session');
         
         if (session?.user) {
+          console.log('User authenticated:', session.user.id);
           setUser(session.user);
           
-          // Fetch user profile data
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select(`
-              *,
-              trainers (subscription_tier, subscription_status),
-              students!students_id_fkey (trainer_id)
-            `)
-            .eq('id', session.user.id)
-            .single();
-
-          if (!profileError && profileData) {
-            setProfile({
-              id: profileData.id,
-              full_name: profileData.full_name,
-              email: profileData.email,
-              role: session.user.user_metadata.role || 'trainer',
-              subscription_tier: profileData.trainers?.subscription_tier,
-              subscription_status: profileData.trainers?.subscription_status,
-              trainer_id: profileData.students?.trainer_id
-            });
+          const profileData = await fetchProfile(session.user.id);
+          if (profileData) {
+            console.log('Profile loaded:', profileData.role);
+            setProfile(profileData);
           }
+        } else {
+          console.log('No active session');
+          setUser(null);
+          setProfile(null);
         }
       } catch (error) {
-        console.error('Error fetching session:', error);
+        console.error('Error in getSession:', error);
       } finally {
         setLoading(false);
       }
@@ -77,32 +101,21 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     getSession();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setUser(session?.user || null);
+      async (event, session) => {
+        console.log('Auth state changed:', event);
+        
         if (session?.user) {
-          // Fetch profile data when auth state changes
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select(`
-              *,
-              trainers (subscription_tier, subscription_status),
-              students!students_id_fkey (trainer_id)
-            `)
-            .eq('id', session.user.id)
-            .single();
-
+          console.log('User authenticated in listener:', session.user.id);
+          setUser(session.user);
+          
+          const profileData = await fetchProfile(session.user.id);
           if (profileData) {
-            setProfile({
-              id: profileData.id,
-              full_name: profileData.full_name,
-              email: profileData.email,
-              role: session.user.user_metadata.role || 'trainer',
-              subscription_tier: profileData.trainers?.subscription_tier,
-              subscription_status: profileData.trainers?.subscription_status,
-              trainer_id: profileData.students?.trainer_id
-            });
+            console.log('Profile updated in listener:', profileData.role);
+            setProfile(profileData);
           }
         } else {
+          console.log('User signed out');
+          setUser(null);
           setProfile(null);
         }
         router.refresh();

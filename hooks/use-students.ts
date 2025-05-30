@@ -20,6 +20,12 @@ export type Student = {
   total_sessions?: number;
   next_session?: string;
   last_session?: string;
+  workout_sessions?: Array<{
+    completed_at: string;
+  }>;
+  appointments?: Array<{
+    start_time: string;
+  }>;
 };
 
 export function useStudents() {
@@ -38,11 +44,10 @@ export function useStudents() {
         .select(`
           *,
           workout_sessions (
-            count,
-            last_session:completed_at(max)
+            completed_at
           ),
-          appointments!inner (
-            next_session:start_time(min)
+          appointments (
+            start_time
           )
         `)
         .eq('trainer_id', user?.id)
@@ -51,13 +56,30 @@ export function useStudents() {
       if (error) throw error;
 
       // Process the data
-      const processedStudents = data?.map(student => ({
-        ...student,
-        total_sessions: student.workout_sessions?.[0]?.count || 0,
-        last_session: student.workout_sessions?.[0]?.last_session,
-        next_session: student.appointments?.[0]?.next_session,
-        progress: Math.floor(Math.random() * 100) // Temporary - implement real logic
-      })) || [];
+      const processedStudents = data?.map(student => {
+        // Calculate total sessions
+        const totalSessions = student.workout_sessions?.length || 0;
+
+        // Find the latest completed session
+        const lastSession = student.workout_sessions
+          ?.map(session => session.completed_at)
+          .filter(Boolean)
+          .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0];
+
+        // Find the next upcoming appointment
+        const nextSession = student.appointments
+          ?.map(appointment => appointment.start_time)
+          .filter(date => new Date(date) > new Date())
+          .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())[0];
+
+        return {
+          ...student,
+          total_sessions: totalSessions,
+          last_session: lastSession,
+          next_session: nextSession,
+          progress: Math.floor(Math.random() * 100) // Temporary - implement real logic
+        };
+      }) || [];
 
       setStudents(processedStudents);
     } catch (error: any) {
@@ -75,19 +97,23 @@ export function useStudents() {
     try {
       if (!isTrainer) throw new Error('Only trainers can create students');
 
-      const { data, error } = await supabase
-        .from('students')
-        .insert({
-          ...student,
-          trainer_id: user?.id
-        })
-        .select()
-        .single();
+      const response = await fetch('/api/students/invite', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-trainer-id': user?.id || ''
+        },
+        body: JSON.stringify(student)
+      });
 
-      if (error) throw error;
+      const result = await response.json();
 
-      setStudents(prev => [data, ...prev]);
-      return data;
+      if (!response.ok) {
+        throw new Error(result.error || 'Error creating student');
+      }
+
+      await fetchStudents(); // Refresh the students list
+      return result.student;
     } catch (error: any) {
       toast({
         title: "Error creating student",
