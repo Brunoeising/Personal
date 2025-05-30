@@ -89,7 +89,6 @@ export default function StudentsPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Buscar alunos do Supabase
   useEffect(() => {
     const fetchStudents = async () => {
       try {
@@ -101,10 +100,10 @@ export default function StudentsPage() {
             *,
             workout_sessions (
               count,
-              completed_at:completed_at(max)
+              last_session:completed_at(max)
             ),
-            appointments (
-              start_time:start_time(min)
+            appointments!inner (
+              next_session:start_time(min)
             )
           `)
           .eq('trainer_id', user.id)
@@ -112,14 +111,13 @@ export default function StudentsPage() {
 
         if (error) throw error;
 
-        // Processar os dados para o formato necessário
+        // Process the data
         const processedStudents = data.map(student => ({
           ...student,
           total_sessions: student.workout_sessions?.[0]?.count || 0,
-          last_session: student.workout_sessions?.[0]?.completed_at,
-          next_session: student.appointments?.[0]?.start_time,
-          // Calcular progresso baseado em alguma lógica de negócio
-          progress: Math.floor(Math.random() * 100) // Temporário - implementar lógica real
+          last_session: student.workout_sessions?.[0]?.last_session,
+          next_session: student.appointments?.[0]?.next_session,
+          progress: Math.floor(Math.random() * 100) // Temporary - implement real logic
         }));
 
         setStudents(processedStudents);
@@ -135,9 +133,9 @@ export default function StudentsPage() {
     };
 
     fetchStudents();
-  }, [supabase, user, toast]);
+  }, [user, supabase, toast]);
 
-  // Estatísticas calculadas
+  // Stats calculation
   const stats = useMemo(() => {
     const active = students.filter(s => s.status === 'active').length;
     const inactive = students.filter(s => s.status === 'inactive').length;
@@ -148,12 +146,12 @@ export default function StudentsPage() {
     return { active, inactive, onboarding, paused, total };
   }, [students]);
 
-  // Filtrar alunos baseado na busca e aba ativa
+  // Filter students based on search and active tab
   const filteredStudents = useMemo(() => {
     return students.filter((student) => {
       const matchesSearch = 
-        student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        student.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        student.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        student.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         student.goal?.toLowerCase().includes(searchQuery.toLowerCase());
                          
       if (activeTab === "all") return matchesSearch;
@@ -172,14 +170,14 @@ export default function StudentsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
       <div className="container mx-auto p-4 sm:p-6 space-y-6">
-        {/* Header responsivo */}
+        {/* Header */}
         <header className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
           <div className="space-y-1">
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
               Meus Alunos
             </h1>
             <p className="text-sm sm:text-base text-muted-foreground">
-              Gerencie e acompanhe todos os seus clientes em um só lugar
+              Gerencie e acompanhe todos os seus alunos em um só lugar
             </p>
           </div>
           <Button asChild className="w-full sm:w-auto">
@@ -190,7 +188,7 @@ export default function StudentsPage() {
           </Button>
         </header>
 
-        {/* Cards de estatísticas */}
+        {/* Stats Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/50 dark:to-blue-900/50 border-blue-200 dark:border-blue-800">
             <CardContent className="p-4">
@@ -253,18 +251,18 @@ export default function StudentsPage() {
           </Card>
         </div>
 
-        {/* Cartão principal */}
+        {/* Main Card */}
         <Card className="shadow-lg">
           <CardHeader className="pb-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <CardTitle className="text-xl">Lista de Alunos</CardTitle>
                 <CardDescription>
-                  Você tem {stats.total} alunos cadastrados no total
+                  Você tem {stats.total} alunos cadastrados
                 </CardDescription>
               </div>
               
-              {/* Barra de pesquisa */}
+              {/* Search Bar */}
               <div className="flex-1 max-w-md">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -280,7 +278,7 @@ export default function StudentsPage() {
           </CardHeader>
           
           <CardContent className="space-y-4">
-            {/* Tabs de filtro */}
+            {/* Filter Tabs */}
             <Tabs defaultValue="all" onValueChange={setActiveTab}>
               <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5">
                 <TabsTrigger value="all" className="text-xs sm:text-sm">
@@ -301,189 +299,94 @@ export default function StudentsPage() {
               </TabsList>
               
               <TabsContent value={activeTab} className="mt-6">
-                <StudentTable students={filteredStudents} />
+                {/* Students Table */}
+                <div className="border rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50">
+                        <TableHead className="font-semibold">Aluno</TableHead>
+                        <TableHead className="font-semibold">Status</TableHead>
+                        <TableHead className="font-semibold">Progresso</TableHead>
+                        <TableHead className="font-semibold">Próxima Sessão</TableHead>
+                        <TableHead className="font-semibold">Total Sessões</TableHead>
+                        <TableHead className="text-right font-semibold">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredStudents.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                            <div className="flex flex-col items-center gap-2">
+                              <Users className="h-12 w-12 text-muted-foreground/50" />
+                              <p className="text-lg font-medium">Nenhum aluno encontrado</p>
+                              <p className="text-sm">Tente uma busca diferente ou adicione um novo aluno</p>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        filteredStudents.map((student) => (
+                          <TableRow key={student.id} className="hover:bg-muted/30 transition-colors">
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <Avatar className="h-10 w-10">
+                                  <AvatarImage src={student.avatar_url} alt={student.name} />
+                                  <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                                    {student.name?.substring(0, 2).toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <p className="font-medium">{student.name}</p>
+                                  <p className="text-xs text-muted-foreground">{student.email}</p>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <StatusBadge status={student.status} />
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <div className="w-20 h-2 rounded-full bg-muted overflow-hidden">
+                                  <div 
+                                    className="h-full bg-gradient-to-r from-primary/80 to-primary rounded-full transition-all duration-300" 
+                                    style={{ width: `${student.progress}%` }}
+                                  />
+                                </div>
+                                <span className="text-sm font-medium min-w-[3rem]">{student.progress}%</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="text-sm">
+                                {student.next_session ? (
+                                  <div className="flex items-center gap-1">
+                                    <Calendar className="h-3 w-3 text-muted-foreground" />
+                                    {formatDate(student.next_session)}
+                                  </div>
+                                ) : (
+                                  <span className="text-muted-foreground">Não agendada</span>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="text-center">
+                                <span className="font-semibold">{student.total_sessions || 0}</span>
+                                <p className="text-xs text-muted-foreground">sessões</p>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <StudentActions student={student} />
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
               </TabsContent>
             </Tabs>
           </CardContent>
         </Card>
       </div>
     </div>
-  );
-}
-
-function StudentTable({ students }: { students: Student[] }) {
-  return (
-    <>
-      {/* Desktop Table */}
-      <div className="hidden lg:block border rounded-lg overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50">
-              <TableHead className="font-semibold">Aluno</TableHead>
-              <TableHead className="font-semibold">Objetivo</TableHead>
-              <TableHead className="font-semibold">Status</TableHead>
-              <TableHead className="font-semibold">Progresso</TableHead>
-              <TableHead className="font-semibold">Próxima Sessão</TableHead>
-              <TableHead className="font-semibold">Total Sessões</TableHead>
-              <TableHead className="text-right font-semibold">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {students.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                  <div className="flex flex-col items-center gap-2">
-                    <Users className="h-12 w-12 text-muted-foreground/50" />
-                    <p className="text-lg font-medium">Nenhum aluno encontrado</p>
-                    <p className="text-sm">Tente uma busca diferente ou adicione um novo aluno</p>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              students.map((student) => (
-                <TableRow key={student.id} className="hover:bg-muted/30 transition-colors">
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={student.avatar_url} alt={student.name} />
-                        <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                          {student.name.substring(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium">{student.name}</p>
-                        <p className="text-xs text-muted-foreground">{student.email}</p>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="max-w-32">
-                      <p className="text-sm font-medium truncate">{student.goal}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge status={student.status} />
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <div className="w-20 h-2 rounded-full bg-muted overflow-hidden">
-                        <div 
-                          className="h-full bg-gradient-to-r from-primary/80 to-primary rounded-full transition-all duration-300" 
-                          style={{ width: `${student.progress}%` }}
-                        />
-                      </div>
-                      <span className="text-sm font-medium min-w-[3rem]">{student.progress}%</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      {student.next_session ? (
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3 text-muted-foreground" />
-                          {formatDate(student.next_session)}
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">Não agendada</span>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-center">
-                      <span className="font-semibold">{student.total_sessions || 0}</span>
-                      <p className="text-xs text-muted-foreground">sessões</p>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <StudentActions student={student} />
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      {/* Mobile Cards */}
-      <div className="lg:hidden space-y-4">
-        {students.length === 0 ? (
-          <Card className="p-8">
-            <div className="flex flex-col items-center gap-4 text-center">
-              <Users className="h-16 w-16 text-muted-foreground/50" />
-              <div>
-                <p className="text-lg font-medium">Nenhum aluno encontrado</p>
-                <p className="text-sm text-muted-foreground">Tente uma busca diferente ou adicione um novo aluno</p>
-              </div>
-              <Button asChild>
-                <Link href="/students/create">
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Adicionar Aluno
-                </Link>
-              </Button>
-            </div>
-          </Card>
-        ) : (
-          students.map((student) => (
-            <Card key={student.id} className="p-4 hover:shadow-md transition-shadow">
-              <div className="space-y-4">
-                {/* Header do card */}
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3 flex-1">
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage src={student.avatar_url} alt={student.name} />
-                      <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                        {student.name.substring(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold truncate">{student.name}</h3>
-                      <p className="text-sm text-muted-foreground truncate">{student.email}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <StatusBadge status={student.status} />
-                      </div>
-                    </div>
-                  </div>
-                  <StudentActions student={student} />
-                </div>
-
-                {/* Informações principais */}
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-muted-foreground">Objetivo</p>
-                    <p className="font-medium truncate">{student.goal}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Sessões</p>
-                    <p className="font-medium">{student.total_sessions || 0} realizadas</p>
-                  </div>
-                </div>
-
-                {/* Progresso */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-muted-foreground">Progresso</span>
-                    <span className="text-sm font-medium">{student.progress}%</span>
-                  </div>
-                  <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
-                    <div 
-                      className="h-full bg-gradient-to-r from-primary/80 to-primary rounded-full transition-all duration-300" 
-                      style={{ width: `${student.progress}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Próxima sessão */}
-                <div className="flex items-center justify-between pt-2 border-t">
-                  <span className="text-sm text-muted-foreground">Próxima sessão:</span>
-                  <span className="text-sm font-medium">
-                    {student.next_session ? formatDate(student.next_session) : 'Não agendada'}
-                  </span>
-                </div>
-              </div>
-            </Card>
-          ))
-        )}
-      </div>
-    </>
   );
 }
 
@@ -537,7 +440,7 @@ function StudentActions({ student }: { student: Student }) {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href={`/students/${student.id}/message`} className="flex items-center">
+          <Link href={`mailto:${student.email}`} className="flex items-center">
             <Mail className="mr-2 h-4 w-4" />
             Enviar Email
           </Link>
