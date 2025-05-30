@@ -203,7 +203,10 @@ export default function CreateStudentPage() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Gênero</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o gênero" />

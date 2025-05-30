@@ -22,8 +22,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { name, email, phone, birthDate, gender, goal, notes, isActive } = body;
 
-    console.log('Creating student with data:', { name, email, trainerId });
-
     // Create user account
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email,

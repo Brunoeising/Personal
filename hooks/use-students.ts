@@ -31,43 +31,24 @@ export function useStudents() {
   const fetchStudents = async () => {
     try {
       if (!isTrainer) throw new Error('Only trainers can access students');
+      if (!user?.id) return;
       
       setLoading(true);
       const { data, error } = await supabase
         .from('students')
         .select('*')
-        .eq('trainer_id', user?.id)
+        .eq('trainer_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;const { data, error } = await supabase
-  .from('students')
-  .select(`
-    *,
-    workout_sessions (
-      count,
-      last_session:completed_at(max)
-    ),
-    appointments!inner (
-      next_session:start_time(min)
-    )
-  `)
-  .eq('trainer_id', user?.id)
-  .order('created_at', { ascending: false });
+      if (error) throw error;
 
-if (error) throw error;
+      // Process the data
+      const processedStudents = data?.map(student => ({
+        ...student,
+        progress: Math.floor(Math.random() * 100) // Temporary progress calculation
+      })) || [];
 
-// Process the data to include aggregated fields
-const processedStudents = data?.map(student => ({
-  ...student,
-  total_sessions: student.workout_sessions?.[0]?.count || 0,
-  last_session: student.workout_sessions?.[0]?.last_session,
-  next_session: student.appointments?.[0]?.next_session,
-  progress: Math.floor(Math.random() * 100) // Keep temporary progress logic
-})) || [];
-
-setStudents(processedStudents)
-
-      setStudents(data || []);
+      setStudents(processedStudents);
     } catch (error: any) {
       console.error('Error fetching students:', error);
       toast({
