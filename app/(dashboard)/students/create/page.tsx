@@ -114,11 +114,6 @@ export default function CreateStudentPage() {
     }
   }
 
-  // Rest of the component remains the same...
-  // [Previous JSX code remains unchanged]
-}
-
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
       <div className="container mx-auto p-4 sm:p-6 max-w-4xl">
