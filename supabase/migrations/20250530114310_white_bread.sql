@@ -377,12 +377,12 @@ CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
   -- Insert into profiles table
-  INSERT INTO profiles (id, full_name, email)
+ INSERT INTO public.profiles (id, full_name, email)
   VALUES (new.id, new.raw_user_meta_data->>'full_name', new.email);
   
   -- If the user is a trainer (default role), insert into trainers table
   IF new.raw_user_meta_data->>'role' = 'trainer' THEN
-    INSERT INTO trainers (id, full_name)
+    INSERT INTO public.trainers (id, full_name)
     VALUES (new.id, new.raw_user_meta_data->>'full_name');
   END IF;
   
