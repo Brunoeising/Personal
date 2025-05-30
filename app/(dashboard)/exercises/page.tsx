@@ -1,1 +1,0 @@
-// Content omitted for brevity - This will be a large file with the exercise list UI
