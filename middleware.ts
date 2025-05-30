@@ -32,6 +32,7 @@ export async function middleware(request: NextRequest) {
       // Students can only access their workouts and profile
       if (request.nextUrl.pathname.startsWith('/students') ||
           request.nextUrl.pathname.startsWith('/exercises/create') ||
+          request.nextUrl.pathname.startsWith('/exercises/edit') ||
           request.nextUrl.pathname.startsWith('/workouts/create')) {
         return NextResponse.redirect(new URL('/dashboard', request.url));
       }
