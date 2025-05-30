@@ -136,7 +136,6 @@ export default function CreateStudentPage() {
       gender: "male",
       goal: "",
       notes: "",
-      status: "onboarding",
       isActive: true,
     },
   });
@@ -176,7 +175,6 @@ export default function CreateStudentPage() {
           gender: data.gender,
           goal: data.goal,
           notes: data.notes,
-          status: data.status,
           is_active: data.isActive,
         });
 
@@ -351,29 +349,7 @@ export default function CreateStudentPage() {
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o status" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="onboarding">Novo</SelectItem>
-                          <SelectItem value="active">Ativo</SelectItem>
-                          <SelectItem value="paused">Pausado</SelectItem>
-                          <SelectItem value="inactive">Inativo</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                
 
                 <FormField
                   control={form.control}
