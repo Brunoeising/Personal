@@ -27,6 +27,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { useSupabase } from "@/lib/providers/supabase-provider";
 import { useToast } from "@/hooks/use-toast";
+import { ArrowLeft } from "lucide-react";
 
 const studentSchema = z.object({
   name: z.string().min(2, {
@@ -48,7 +49,7 @@ const studentSchema = z.object({
 type FormData = z.infer<typeof studentSchema>;
 
 export default function CreateStudentPage() {
-  const { supabase, user } = useSupabase();
+  const { user } = useSupabase();
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -68,10 +69,7 @@ export default function CreateStudentPage() {
   });
 
   async function onSubmit(data: FormData) {
-    console.log("onSubmit called with data:", data);
-
     if (!user) {
-      console.error("No authenticated user found");
       toast({
         title: "Erro de autenticação",
         description: "Você precisa estar logado para criar alunos",
@@ -83,43 +81,24 @@ export default function CreateStudentPage() {
     setIsLoading(true);
 
     try {
-      console.log("Attempting to insert student with data:", {
-        trainer_id: user.id,
-        full_name: data.name,
-        email: data.email,
-        phone: data.phone,
-        gender: data.gender,
-        birth_date: data.birthDate,
-        goal: data.goal,
-        notes: data.notes,
-        is_active: data.isActive,
-        status: 'onboarding'
+      const response = await fetch('/api/students/invite', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-trainer-id': user.id
+        },
+        body: JSON.stringify(data)
       });
 
-      const { data: newStudent, error } = await supabase
-        .from('students')
-        .insert({
-          trainer_id: user.id,
-          full_name: data.name,
-          email: data.email,
-          phone: data.phone,
-          gender: data.gender,
-          birth_date: data.birthDate,
-          goal: data.goal,
-          notes: data.notes,
-          is_active: data.isActive,
-          status: 'onboarding'
-        })
-        .select('*')
-        .single();
+      const result = await response.json();
 
-      console.log("Supabase response:", { newStudent, error });
-
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error(result.error || 'Erro ao criar aluno');
+      }
 
       toast({
-        title: "Aluno criado com sucesso!",
-        description: "O aluno foi adicionado à sua lista",
+        title: "Aluno convidado com sucesso!",
+        description: "Um email foi enviado para o aluno com instruções de acesso",
       });
 
       router.push("/students");
@@ -134,6 +113,11 @@ export default function CreateStudentPage() {
       setIsLoading(false);
     }
   }
+
+  // Rest of the component remains the same...
+  // [Previous JSX code remains unchanged]
+}
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
