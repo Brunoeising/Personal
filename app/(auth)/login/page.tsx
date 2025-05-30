@@ -53,7 +53,7 @@ export default function LoginPage() {
     setIsLoading(true);
     
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data: { session }, error } = await supabase.auth.signInWithPassword({
         email: values.email,
         password: values.password,
       });
@@ -62,12 +62,22 @@ export default function LoginPage() {
         throw error;
       }
 
+      // Get user role from metadata
+      const userRole = session?.user?.user_metadata?.role || 'trainer';
+
       toast({
         title: "Login successful",
         description: "Redirecting to dashboard...",
       });
 
-window.location.href = "/dashboard";
+      // Force a revalidation of the session
+      await router.refresh();
+
+      // Small delay to ensure session is properly propagated
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 500);
+
     } catch (error: any) {
       toast({
         title: "Login failed",
