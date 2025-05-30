@@ -1,24 +1,14 @@
-"use client";
-
-import { useState, useMemo, useEffect } from "react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -26,14 +16,22 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "@/components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+} from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   UserPlus,
   Search,
@@ -51,10 +49,10 @@ import {
   Eye,
   Edit,
   Phone,
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { useSupabase } from "@/lib/providers/supabase-provider";
-import { useToast } from "@/hooks/use-toast";
+} from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { useSupabase } from '@/lib/providers/supabase-provider';
+import { useToast } from '@/hooks/use-toast';
 
 interface Student {
   id: string;
@@ -72,16 +70,10 @@ interface Student {
   monthly_goal?: number;
   created_at: string;
   updated_at: string;
-  workout_sessions?: {
-    completed_at: string;
-  }[];
-  appointments?: {
-    start_time: string;
-  }[];
 }
 
 export default function StudentsPage() {
-  const { supabase, user } = useSupabase();
+  const { supabase, user, isTrainer } = useSupabase();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
@@ -95,43 +87,18 @@ export default function StudentsPage() {
 
         const { data, error } = await supabase
           .from('students')
-          .select(`
-            *,
-            workout_sessions (completed_at),
-            appointments (start_time)
-          `)
+          .select('*')
           .eq('trainer_id', user.id)
           .order('created_at', { ascending: false });
 
         if (error) throw error;
 
         // Process the data
-        const processedStudents = data?.map(student => {
-          // Find last completed session
-          const lastSession = student.workout_sessions?.reduce((latest, session) => {
-            if (!latest || new Date(session.completed_at) > new Date(latest)) {
-              return session.completed_at;
-            }
-            return latest;
-          }, null);
-
-          // Find next appointment
-          const nextSession = student.appointments?.reduce((nearest, appt) => {
-            const apptDate = new Date(appt.start_time);
-            if (apptDate > new Date() && (!nearest || apptDate < new Date(nearest))) {
-              return appt.start_time;
-            }
-            return nearest;
-          }, null);
-
-          return {
-            ...student,
-            total_sessions: student.workout_sessions?.length || 0,
-            last_session: lastSession,
-            next_session: nextSession,
-            progress: Math.floor(Math.random() * 100) // Temporary progress calculation
-          };
-        }) || [];
+        const processedStudents = data?.map(student => ({
+          ...student,
+          total_sessions: 0, // This will be implemented later with actual session counting
+          progress: Math.floor(Math.random() * 100) // Temporary progress calculation
+        })) || [];
 
         setStudents(processedStudents);
       } catch (error: any) {
@@ -146,42 +113,30 @@ export default function StudentsPage() {
       }
     };
 
-    if (user) {
+    if (user && isTrainer) {
       fetchStudents();
     }
-  }, [user, supabase, toast]);
+  }, [user, isTrainer, supabase, toast]);
 
   // Stats calculation
-  const stats = useMemo(() => {
-    const active = students.filter(s => s.status === 'active').length;
-    const inactive = students.filter(s => s.status === 'inactive').length;
-    const onboarding = students.filter(s => s.status === 'onboarding').length;
-    const paused = students.filter(s => s.status === 'paused').length;
-    const total = students.length;
-    
-    return { active, inactive, onboarding, paused, total };
-  }, [students]);
+  const stats = {
+    total: students.length,
+    active: students.filter(s => s.status === 'active').length,
+    inactive: students.filter(s => s.status === 'inactive').length,
+    onboarding: students.filter(s => s.status === 'onboarding').length,
+    paused: students.filter(s => s.status === 'paused').length
+  };
 
   // Filter students based on search and active tab
-  const filteredStudents = useMemo(() => {
-    return students.filter((student) => {
-      const matchesSearch = 
-        student.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        student.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        student.goal?.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredStudents = students.filter((student) => {
+    const matchesSearch = 
+      student.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      student.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      student.goal?.toLowerCase().includes(searchQuery.toLowerCase());
                          
-      if (activeTab === "all") return matchesSearch;
-      return matchesSearch && student.status === activeTab;
-    });
-  }, [searchQuery, activeTab, students]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+    if (activeTab === "all") return matchesSearch;
+    return matchesSearch && student.status === activeTab;
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
@@ -298,7 +253,7 @@ export default function StudentsPage() {
             <Tabs defaultValue="all" onValueChange={setActiveTab}>
               <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5">
                 <TabsTrigger value="all" className="text-xs sm:text-sm">
-                  Todas ({stats.total})
+                  Todos ({stats.total})
                 </TabsTrigger>
                 <TabsTrigger value="active" className="text-xs sm:text-sm">
                   Ativos ({stats.active})
@@ -329,7 +284,15 @@ export default function StudentsPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredStudents.length === 0 ? (
+                      {loading ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-8">
+                            <div className="flex justify-center">
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : filteredStudents.length === 0 ? (
                         <TableRow>
                           <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                             <div className="flex flex-col items-center gap-2">
