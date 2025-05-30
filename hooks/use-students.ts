@@ -1,0 +1,163 @@
+import { useState, useEffect } from 'react';
+import { useSupabase } from '@/lib/providers/supabase-provider';
+import { useToast } from '@/hooks/use-toast';
+
+export type Student = {
+  id: string;
+  full_name: string;
+  email: string;
+  phone?: string;
+  gender?: string;
+  age?: number;
+  birth_date?: string;
+  goal: string;
+  status: 'active' | 'inactive' | 'onboarding' | 'paused';
+  is_active: boolean;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  progress?: number;
+  total_sessions?: number;
+  next_session?: string;
+  last_session?: string;
+};
+
+export function useStudents() {
+  const { supabase, user, isTrainer } = useSupabase();
+  const { toast } = useToast();
+  const [students, setStudents] = useState<Student[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchStudents = async () => {
+    try {
+      if (!isTrainer) throw new Error('Only trainers can access students');
+      
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('students')
+        .select(`
+          *,
+          workout_sessions (
+            count,
+            last_session:completed_at(max)
+          ),
+          appointments!inner (
+            next_session:start_time(min)
+          )
+        `)
+        .eq('trainer_id', user?.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Process the data
+      const processedStudents = data?.map(student => ({
+        ...student,
+        total_sessions: student.workout_sessions?.[0]?.count || 0,
+        last_session: student.workout_sessions?.[0]?.last_session,
+        next_session: student.appointments?.[0]?.next_session,
+        progress: Math.floor(Math.random() * 100) // Temporary - implement real logic
+      })) || [];
+
+      setStudents(processedStudents);
+    } catch (error: any) {
+      toast({
+        title: "Error loading students",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createStudent = async (student: Omit<Student, 'id' | 'created_at' | 'updated_at'>) => {
+    try {
+      if (!isTrainer) throw new Error('Only trainers can create students');
+
+      const { data, error } = await supabase
+        .from('students')
+        .insert({
+          ...student,
+          trainer_id: user?.id
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setStudents(prev => [data, ...prev]);
+      return data;
+    } catch (error: any) {
+      toast({
+        title: "Error creating student",
+        description: error.message,
+        variant: "destructive",
+      });
+      return null;
+    }
+  };
+
+  const updateStudent = async (id: string, updates: Partial<Student>) => {
+    try {
+      if (!isTrainer) throw new Error('Only trainers can update students');
+
+      const { data, error } = await supabase
+        .from('students')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setStudents(prev => prev.map(s => s.id === id ? { ...s, ...data } : s));
+      return data;
+    } catch (error: any) {
+      toast({
+        title: "Error updating student",
+        description: error.message,
+        variant: "destructive",
+      });
+      return null;
+    }
+  };
+
+  const deleteStudent = async (id: string) => {
+    try {
+      if (!isTrainer) throw new Error('Only trainers can delete students');
+
+      const { error } = await supabase
+        .from('students')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setStudents(prev => prev.filter(s => s.id !== id));
+      return true;
+    } catch (error: any) {
+      toast({
+        title: "Error deleting student",
+        description: error.message,
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    if (user && isTrainer) {
+      fetchStudents();
+    }
+  }, [user, isTrainer]);
+
+  return {
+    students,
+    loading,
+    createStudent,
+    updateStudent,
+    deleteStudent,
+    refreshStudents: fetchStudents
+  };
+}
