@@ -125,7 +125,7 @@ export default function ExercisesPage() {
                             </p>
                             <div className="flex gap-2 mt-1">
                               {exercise.video_url && (
-                                <Badge variant="outline" className="text-xs">
+                                <Badge variant="outline\" className="text-xs">
                                   <Video className="h-3 w-3 mr-1" />
                                   Vídeo
                                 </Badge>
