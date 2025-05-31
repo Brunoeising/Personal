@@ -271,7 +271,7 @@ export default function PaymentPage() {
 
         <div className="flex flex-col-reverse sm:flex-row justify-between items-center pt-4 gap-4">
           {selectedPlan !== "free" ? (
-            <Button variant="outline" onClick={handleSkip}>
+            <Button variant="outline\" onClick={handleSkip}>
               Skip for now (Use Free Plan)
             </Button>
           ) : (
