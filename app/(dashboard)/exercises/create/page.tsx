@@ -34,32 +34,33 @@ import {
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useExercises } from "@/hooks/use-exercises";
-import { ArrowLeft, Save } from "lucide-react";
+import { useSupabase } from "@/lib/providers/supabase-provider";
+import { ArrowLeft, Save, X } from "lucide-react";
 
 const exerciseSchema = z.object({
   name: z.string().min(2, {
-    message: "Nome deve ter pelo menos 2 caracteres",
+    message: "Name must be at least 2 characters",
   }),
   description: z.string().min(10, {
-    message: "Descrição deve ter pelo menos 10 caracteres",
+    message: "Description must be at least 10 characters",
   }),
   instructions: z.string().min(10, {
-    message: "Instruções devem ter pelo menos 10 caracteres",
+    message: "Instructions must be at least 10 characters",
   }),
   category: z.string({
-    required_error: "Selecione uma categoria",
+    required_error: "Please select a category",
   }),
   equipment: z.string({
-    required_error: "Selecione um equipamento",
+    required_error: "Please select equipment",
   }),
   difficulty: z.string({
-    required_error: "Selecione uma dificuldade",
+    required_error: "Please select difficulty",
   }),
   muscle_group: z.string({
-    required_error: "Selecione um grupo muscular",
+    required_error: "Please select muscle group",
   }),
-  video_url: z.string().url("URL inválida").optional().or(z.literal("")),
-  image_url: z.string().url("URL inválida").optional().or(z.literal("")),
+  video_url: z.string().url("Invalid URL").optional().or(z.literal("")),
+  image_url: z.string().url("Invalid URL").optional().or(z.literal("")),
   is_public: z.boolean().default(false),
 });
 
@@ -67,6 +68,7 @@ type FormData = z.infer<typeof exerciseSchema>;
 
 export default function CreateExercisePage() {
   const router = useRouter();
+  const { loading: userLoading, isTrainer } = useSupabase();
   const { toast } = useToast();
   const { createExercise } = useExercises();
   const [isLoading, setIsLoading] = useState(false);
@@ -87,14 +89,14 @@ export default function CreateExercisePage() {
     },
   });
 
-  async function onSubmit(data: FormData) {
+  async function onSubmit(values: FormData) {
     setIsLoading(true);
     try {
-      const exercise = await createExercise(data);
+      const exercise = await createExercise(values);
       if (exercise) {
         toast({
-          title: "Exercício criado com sucesso!",
-          description: "O exercício foi adicionado à sua biblioteca",
+          title: "Exercise created",
+          description: "The exercise has been added to your library",
         });
         router.push("/exercises");
       }
@@ -103,6 +105,31 @@ export default function CreateExercisePage() {
     }
   }
 
+  if (userLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
+        <div className="container mx-auto p-4 sm:p-6">
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isTrainer) {
+     return (
+      <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
+        <div className="container mx-auto p-4 sm:p-6">
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+   if (!isTrainer) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
       <div className="container mx-auto p-4 sm:p-6 max-w-4xl">
