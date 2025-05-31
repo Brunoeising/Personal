@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -71,14 +71,7 @@ export default function StudentProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [recentSessions, setRecentSessions] = useState<any[]>([]);
 
-  useEffect(() => {
-    if (params.id) {
-      fetchStudent();
-      fetchRecentSessions();
-    }
-  }, [params.id]);
-
-  const fetchStudent = async () => {
+  const fetchStudent = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('students')
@@ -91,17 +84,17 @@ export default function StudentProfilePage() {
       setStudent(data);
     } catch (error: any) {
       toast({
-        title: "Erro ao carregar aluno",
-        description: error.message || "Tente novamente mais tarde",
+        title: "Error loading student",
+        description: error.message,
         variant: "destructive",
       });
       router.push('/students');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [params.id, user?.id, supabase, toast, router]);
 
-  const fetchRecentSessions = async () => {
+  const fetchRecentSessions = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('student_sessions')
@@ -114,9 +107,16 @@ export default function StudentProfilePage() {
       if (error) throw error;
       setRecentSessions(data || []);
     } catch (error) {
-      console.error('Erro ao buscar sessões:', error);
+      console.error('Error fetching sessions:', error);
     }
-  };
+  }, [params.id, user?.id, supabase]);
+
+  useEffect(() => {
+    if (params.id) {
+      fetchStudent();
+      fetchRecentSessions();
+    }
+  }, [params.id, fetchStudent, fetchRecentSessions]);
 
   const getStatusColor = (status: string) => {
     switch (status) {

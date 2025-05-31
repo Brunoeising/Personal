@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -82,7 +82,7 @@ export default function StudentsPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchStudents = async () => {
+  const fetchStudents = useCallback(async () => {
     try {
       if (!isTrainer) throw new Error('Only trainers can access students');
       if (!user?.id) return;
@@ -143,13 +143,13 @@ export default function StudentsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id, isTrainer, supabase, toast]);
 
   useEffect(() => {
     if (user && isTrainer) {
       fetchStudents();
     }
-  }, [user, isTrainer]);
+  }, [user, isTrainer, fetchStudents]);
 
   // Stats calculation
   const stats = {
