@@ -16,10 +16,14 @@ export type Student = {
   notes?: string;
   created_at: string;
   updated_at: string;
-  progress?: number;
-  total_sessions?: number;
-  next_session?: string;
-  last_session?: string;
+  workout_sessions?: Array<{
+    id: string;
+    completed_at?: string;
+  }>;
+  appointments?: Array<{
+    id: string;
+    start_time: string;
+  }>;
 };
 
 export function useStudents() {
@@ -36,19 +40,22 @@ export function useStudents() {
       setLoading(true);
       const { data, error } = await supabase
         .from('students')
-        .select('*')
+        .select(`
+          *,
+          workout_sessions!left (
+            id,
+            completed_at
+          ),
+          appointments!left (
+            id,
+            start_time
+          )
+        `)
         .eq('trainer_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-
-      // Process the data
-      const processedStudents = data?.map(student => ({
-        ...student,
-        progress: Math.floor(Math.random() * 100) // Temporary progress calculation
-      })) || [];
-
-      setStudents(processedStudents);
+      setStudents(data || []);
     } catch (error: any) {
       console.error('Error fetching students:', error);
       toast({
