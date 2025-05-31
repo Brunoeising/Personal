@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSupabase } from '@/lib/providers/supabase-provider';
 import { useToast } from '@/hooks/use-toast';
 
@@ -24,37 +24,27 @@ export function useExercises() {
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchExercises = async () => {
+  const fetchExercises = useCallback(async () => {
     try {
-      console.log('Fetching exercises, user:', user?.id, 'isTrainer:', isTrainer);
       setLoading(true);
       
       if (!user) {
-        console.log('No user, skipping fetch');
         return;
       }
 
       let query = supabase.from('exercises').select('*');
 
       if (isTrainer) {
-        console.log('Fetching trainer exercises');
         query = query.or(`trainer_id.eq.${user.id},is_public.eq.true`);
       } else {
-        console.log('Fetching public exercises only');
         query = query.eq('is_public', true);
       }
 
       const { data, error } = await query.order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching exercises:', error);
-        throw error;
-      }
-
-      console.log('Exercises fetched:', data?.length);
+      if (error) throw error;
       setExercises(data || []);
     } catch (error: any) {
-      console.error('Exercise fetch error:', error);
       toast({
         title: "Error loading exercises",
         description: error.message,
@@ -63,17 +53,18 @@ export function useExercises() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, isTrainer, supabase, toast]);
 
   const createExercise = async (exercise: Omit<Exercise, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      if (!isTrainer) throw new Error('Apenas trainers podem criar exercícios');
+      if (!user) throw new Error('You must be logged in to create exercises');
+      if (!isTrainer) throw new Error('Only trainers can create exercises');
 
       const { data, error } = await supabase
         .from('exercises')
         .insert({
           ...exercise,
-          trainer_id: user?.id
+          trainer_id: user.id
         })
         .select()
         .single();
@@ -84,7 +75,7 @@ export function useExercises() {
       return data;
     } catch (error: any) {
       toast({
-        title: "Erro ao criar exercício",
+        title: "Error creating exercise",
         description: error.message,
         variant: "destructive",
       });
@@ -94,7 +85,8 @@ export function useExercises() {
 
   const updateExercise = async (id: string, updates: Partial<Exercise>) => {
     try {
-      if (!isTrainer) throw new Error('Apenas trainers podem atualizar exercícios');
+      if (!user) throw new Error('You must be logged in to update exercises');
+      if (!isTrainer) throw new Error('Only trainers can update exercises');
 
       const { data, error } = await supabase
         .from('exercises')
@@ -109,7 +101,7 @@ export function useExercises() {
       return data;
     } catch (error: any) {
       toast({
-        title: "Erro ao atualizar exercício",
+        title: "Error updating exercise",
         description: error.message,
         variant: "destructive",
       });
@@ -119,7 +111,8 @@ export function useExercises() {
 
   const deleteExercise = async (id: string) => {
     try {
-      if (!isTrainer) throw new Error('Apenas trainers podem deletar exercícios');
+      if (!user) throw new Error('You must be logged in to delete exercises');
+      if (!isTrainer) throw new Error('Only trainers can delete exercises');
 
       const { error } = await supabase
         .from('exercises')
@@ -132,7 +125,7 @@ export function useExercises() {
       return true;
     } catch (error: any) {
       toast({
-        title: "Erro ao deletar exercício",
+        title: "Error deleting exercise",
         description: error.message,
         variant: "destructive",
       });
@@ -144,7 +137,7 @@ export function useExercises() {
     if (user) {
       fetchExercises();
     }
-  }, [user, isTrainer]);
+  }, [user, fetchExercises]);
 
   return {
     exercises,
