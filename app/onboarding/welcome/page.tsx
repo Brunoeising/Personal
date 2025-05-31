@@ -54,7 +54,7 @@ export default function WelcomePage() {
         >
           <h1 className="text-3xl font-bold mb-2">Welcome to FitPro, {name}!</h1>
           <p className="text-muted-foreground mb-8 max-w-md">
-            You're about to transform how you manage your personal training business. Let's get started with a few quick steps.
+            You&apos;re about to transform how you manage your personal training business. Let&apos;s get started with a few quick steps.
           </p>
         </motion.div>
 
@@ -70,10 +70,10 @@ export default function WelcomePage() {
               Your account is ready
             </h3>
             <p className="text-muted-foreground text-sm mb-4">
-              You've chosen the <span className="font-medium">{plan.toUpperCase()}</span> plan.
+              You&apos;ve chosen the <span className="font-medium">{plan.toUpperCase()}</span> plan.
               {plan === "free"
                 ? " You can upgrade anytime as your business grows."
-                : " Great choice! You'll have access to advanced features."}
+                : " Great choice! You&apos;ll have access to advanced features."}
             </p>
             <div className="text-sm bg-muted p-3 rounded-lg">
               <p className="font-medium mb-1">Next steps:</p>

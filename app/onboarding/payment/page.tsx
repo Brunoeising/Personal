@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
@@ -270,7 +271,7 @@ export default function PaymentPage() {
 
         <div className="flex flex-col-reverse sm:flex-row justify-between items-center pt-4 gap-4">
           {selectedPlan !== "free" ? (
-            <Button variant="outline\" onClick={handleSkip}>
+            <Button variant="outline" onClick={handleSkip}>
               Skip for now (Use Free Plan)
             </Button>
           ) : (

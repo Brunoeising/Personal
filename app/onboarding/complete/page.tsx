@@ -17,7 +17,7 @@ export default function CompletePage() {
     // Show toast when component mounts
     toast({
       title: "Setup complete!",
-      description: "You're all set to start managing your fitness business",
+      description: "You&apos;re all set to start managing your fitness business",
     });
   }, [toast]);
 
@@ -40,7 +40,7 @@ export default function CompletePage() {
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <h1 className="text-3xl font-bold mb-2">You're All Set!</h1>
+          <h1 className="text-3xl font-bold mb-2">You&apos;re All Set!</h1>
           <p className="text-muted-foreground mb-8 max-w-md">
             Your FitPro account is ready to use. You can now start managing your clients and creating personalized workouts.
           </p>
@@ -53,7 +53,7 @@ export default function CompletePage() {
           className="w-full max-w-lg mb-8"
         >
           <Card className="bg-card border-border p-6">
-            <h3 className="text-lg font-semibold mb-4">What's next?</h3>
+            <h3 className="text-lg font-semibold mb-4">What&apos;s next?</h3>
             <ul className="space-y-4">
               <li className="flex items-start">
                 <div className="bg-primary/10 rounded-full p-1 mr-3 mt-0.5">
