@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
@@ -36,7 +36,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   
   const supabase = createClientComponentClient();
 
-  const createProfile = async (userId: string, email: string, role: UserRole) => {
+  const createProfile = useCallback(async (userId: string, email: string, role: UserRole) => {
     try {
       const { data: newProfile, error: insertError } = await supabase
         .from('profiles')
@@ -44,7 +44,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
           {
             id: userId,
             email: email,
-            full_name: email.split('@')[0], // Temporary name from email
+            full_name: email.split('@')[0],
             role: role
           }
         ])
@@ -76,9 +76,9 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       console.error('Error in createProfile:', error);
       return null;
     }
-  };
+  }, [supabase]);
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = useCallback(async (userId: string) => {
     try {
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -111,7 +111,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       console.error('Error in fetchProfile:', error);
       return null;
     }
-  };
+  }, [supabase]);
 
   useEffect(() => {
     const getSession = async () => {
@@ -125,7 +125,6 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
           
           let profileData = await fetchProfile(session.user.id);
           
-          // If no profile exists, create one
           if (!profileData) {
             const role = session.user.user_metadata.role as UserRole || 'trainer';
             profileData = await createProfile(session.user.id, session.user.email!, role);
@@ -159,7 +158,6 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
           
           let profileData = await fetchProfile(session.user.id);
           
-          // If no profile exists, create one
           if (!profileData) {
             const role = session.user.user_metadata.role as UserRole || 'trainer';
             profileData = await createProfile(session.user.id, session.user.email!, role);
@@ -181,7 +179,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [router, supabase]);
+  }, [router, supabase, createProfile, fetchProfile]);
 
   const value = {
     supabase,
